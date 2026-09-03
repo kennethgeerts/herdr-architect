@@ -47,7 +47,8 @@ Reports, specs and consults land under `/tmp/herdr-architect/<timestamp>-<slug>/
 
 | File | Purpose |
 |---|---|
-| `SKILL.md` | the pattern: rules, spec format, report format, command blocks |
+| `SKILL.md` | the pattern: rules, spec format, command blocks |
+| `sol-rules.md` | standing rules and report format, appended to every spec |
 | `advisor-prompt.md` | system prompt appended to the advisor's Claude Code session |
 | `setup.sh` | preflight, report dir, tab creation or reuse, trust dialog, env file |
 | `assets/flow.svg` | the diagram above |

@@ -27,33 +27,18 @@ Every Herdr command this pattern needs is below. Open `herdr --skill` only when 
 ~/.claude/skills/herdr-architect/setup.sh <slug> [high|xhigh|max|ultra]
 ```
 
-Preflight (`HERDR_ENV=1`, `herdr`, `codex`, `claude`, `python3`), report dir, both tabs. A live `sol*` or `advisor*` agent in `$HERDR_WORKSPACE_ID` is reused (`/new` and `/clear` sent); otherwise the tabs are created in `$PWD` without taking focus, and Claude's folder-trust dialog is accepted. It writes `/tmp/herdr-architect/$HERDR_WORKSPACE_ID.env` holding `SOL`, `ADVISOR`, `REPORT_DIR`; every command below starts by sourcing it. A non-zero exit says what failed. A missing prerequisite means stop and say so; never implement the work yourself. A blocked agent screen goes to the user; rerun once resolved.
+Preflight (`HERDR_ENV=1`, `herdr`, `codex`, `claude`, `python3`), report dir, both tabs. A live `sol*` or `advisor*` agent in `$HERDR_WORKSPACE_ID` is reused (`/new` and `/clear` sent); otherwise the tabs are created in `$PWD` without taking focus, and Claude's folder-trust dialog is accepted. It writes `/tmp/herdr-architect/$HERDR_WORKSPACE_ID.env` holding `SOL`, `ADVISOR`, `REPORT_DIR`, `SKILL_DIR`; every command below starts by sourcing it. A non-zero exit says what failed. A missing prerequisite means stop and say so; never implement the work yourself. A blocked agent screen goes to the user; rerun once resolved.
 
 Sol's effort holds for the life of the tab (to change it, close the tab with `herdr tab close <tab_id>`, id from `herdr agent get "$SOL"`, and rerun setup): `high` by default, `xhigh` for tricky multi-file logic, `max` for concurrency, security, or hard debugging, `ultra` only for wide refactors. Sol runs with `-a on-request -s workspace-write`, full-auto inside the working tree and /tmp; never bypass the sandbox. The advisor runs `claude --model fable --permission-mode plan` with `advisor-prompt.md` appended to its system prompt.
 
 ## Delegating to Sol
 
-Sol shares none of your conversation. A spec has six parts: **objective** (one paragraph), **files** (exact paths), **interfaces** (the contracts other code depends on: CLI flags, signatures, schemas, seams for tests; internal module layout is Sol's call unless it matters), **constraints**, **verification** (the command that proves it), and the closing block below with the report path filled in. A spec you cannot finish writing means a decision is not made yet; make it, do not hand ambiguity to Sol.
-
-Constraints always include these standing rules, plus the project's own: do not commit; gitignore anything generated; delete artifacts your verification created; machine-readable output keeps the same structure in every invocation, including the empty and single-result cases; touch nothing outside the listed files.
-
-```
-When finished, run the verification command and write a report to
-<REPORT_DIR>/<task-id>.md in exactly this format, then reply with only the word done:
-
-SOL REPORT
-STATUS: complete | partial | refused
-OBJECTIVE: <one line>
-CHANGES: <file: one-line summary, one per file>
-VERIFIED: <command run and its actual output, trimmed>
-JUDGMENT CALLS: <decisions the spec left open and what you chose, or none>
-GAPS: <spec ambiguities or unfinished items, or none>
-```
+Sol shares none of your conversation. A spec has six parts: **objective** (one paragraph), **files** (exact paths), **interfaces** (the contracts other code depends on: CLI flags, signatures, schemas, seams for tests; internal module layout is Sol's call unless it matters), **constraints** (the project's own; `sol-rules.md` adds the standing ones), **verification** (the command that proves it), and **report path** (`$REPORT_DIR/<task-id>.md`). A spec you cannot finish writing means a decision is not made yet; make it, do not hand ambiguity to Sol.
 
 ```bash
 # spec written to $REPORT_DIR/spec-<task-id>.md
 . /tmp/herdr-architect/$HERDR_WORKSPACE_ID.env
-herdr agent prompt "$SOL" "$(cat "$REPORT_DIR/spec-<task-id>.md")" --wait --until working --timeout 10000
+herdr agent prompt "$SOL" "$(cat "$REPORT_DIR/spec-<task-id>.md" "$SKILL_DIR/sol-rules.md")" --wait --until working --timeout 10000
 # returns within a second once Sol is working; now write the next spec or consult
 herdr agent wait "$SOL" --timeout 1800000
 cat "$REPORT_DIR/<task-id>.md"; git add -N . && git diff --stat

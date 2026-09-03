@@ -2,7 +2,7 @@
 # herdr-architect setup: preflight, report dir, sol + advisor tabs.
 # usage: setup.sh <slug> [high|xhigh|max|ultra]
 # Reuses live agents in this workspace (sends sol /new, advisor /clear); otherwise creates them.
-# Writes /tmp/herdr-architect/<workspace>.env with SOL, ADVISOR, REPORT_DIR and prints it.
+# Writes /tmp/herdr-architect/<workspace>.env with SOL, ADVISOR, REPORT_DIR, SKILL_DIR and prints it.
 set -euo pipefail
 slug=${1:?usage: setup.sh <slug> [high|xhigh|max|ultra]}
 effort=${2:-high}
@@ -83,5 +83,5 @@ reuse_or_start advisor claude /clear --model fable --permission-mode plan \
 advisor=$name
 
 env_file=/tmp/herdr-architect/$ws.env
-printf 'SOL=%s\nADVISOR=%s\nREPORT_DIR=%s\n' "$sol" "$advisor" "$report_dir" > "$env_file"
+printf 'SOL=%s\nADVISOR=%s\nREPORT_DIR=%s\nSKILL_DIR=%s\n' "$sol" "$advisor" "$report_dir" "$skill_dir" > "$env_file"
 echo "env: $env_file"; cat "$env_file"

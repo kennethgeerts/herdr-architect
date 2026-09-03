@@ -39,9 +39,9 @@ git clone https://github.com/kennethgeerts/herdr-architect ~/.claude/skills/herd
 
 ## Use
 
-In a Claude Code session inside Herdr, ask for work "with Sol", "via Codex", or "with the architect pattern", or ask for a Fable review. The session loads the skill and takes it from there. Sol's reasoning effort is chosen at setup and holds for the tab: `high` by default, `xhigh`, `max`, or `ultra` for harder work.
+In a Claude Code session inside Herdr, ask for work "with Sol", "via Codex", or "with the architect pattern", or ask for a Fable review. The session loads the skill and takes it from there.
 
-Reports, specs and consults land under `/tmp/herdr-architect/<timestamp>-<slug>/`.
+Sol's reasoning effort is chosen at setup and holds for the tab: `high` by default, or `xhigh`, `max`, `ultra` for harder work. Reports, specs and consults land under `/tmp/herdr-architect/<timestamp>-<slug>/`.
 
 ## Files
 
@@ -49,10 +49,8 @@ Reports, specs and consults land under `/tmp/herdr-architect/<timestamp>-<slug>/
 |---|---|
 | `SKILL.md` | the pattern: rules, spec format, command blocks |
 | `sol-rules.md` | standing rules and report format, appended to every spec |
-| `advisor-prompt.md` | system prompt appended to the advisor's Claude Code session |
-| `setup.sh` | preflight, report dir, tab creation or reuse, trust dialog, env file |
-| `assets/flow.svg` | the diagram above |
-| `LICENSE` | MIT |
+| `advisor-prompt.md` | system prompt for the advisor's Claude Code session |
+| `setup.sh` | preflight, report directory, tab creation or reuse, trust dialog, env file |
 
 ## Credits
 

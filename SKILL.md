@@ -29,7 +29,7 @@ Every Herdr command this pattern needs is below. Open `herdr --skill` only when 
 
 Preflight (`HERDR_ENV=1`, `herdr`, `codex`, `claude`, `python3`), report dir, both tabs. A live `sol*` or `advisor*` agent in `$HERDR_WORKSPACE_ID` is reused (`/new` and `/clear` sent); otherwise the tabs are created in `$PWD` without taking focus, and Claude's folder-trust dialog is accepted. It writes `/tmp/herdr-architect/$HERDR_WORKSPACE_ID.env` holding `SOL`, `ADVISOR`, `REPORT_DIR`, `SKILL_DIR`; every command below starts by sourcing it. A non-zero exit says what failed. A missing prerequisite means stop and say so; never implement the work yourself. A blocked agent screen goes to the user; rerun once resolved.
 
-Sol's effort holds for the life of the tab (to change it, close the tab with `herdr tab close <tab_id>`, id from `herdr agent get "$SOL"`, and rerun setup): `high` by default, `xhigh` for tricky multi-file logic, `max` for concurrency, security, or hard debugging, `ultra` only for wide refactors. Sol runs with `-a on-request -s workspace-write`, full-auto inside the working tree and /tmp; never bypass the sandbox. The advisor runs `claude --model fable --permission-mode plan` with `advisor-prompt.md` appended to its system prompt.
+The tabs live for one deliverable: setup reuses a live pair, `teardown.sh` at the end closes them. Skip teardown only when the user has said more Sol work is coming this session. Sol's effort holds for the life of the tab (to change it, run teardown and rerun setup): `high` by default, `xhigh` for tricky multi-file logic, `max` for concurrency, security, or hard debugging, `ultra` only for wide refactors. Sol runs with `-a on-request -s workspace-write`, full-auto inside the working tree and /tmp; never bypass the sandbox. The advisor runs `claude --model fable --permission-mode plan` with `advisor-prompt.md` appended to its system prompt.
 
 ## Delegating to Sol
 
@@ -67,4 +67,19 @@ The consult carries the goal, the constraints, and either the options considered
 
 ## Done
 
-Report once: what changed (from the Sol reports), the verification you re-ran, the advisor's verdict, anything open. Leave both tabs running unless asked to close them.
+Final consult answered, then:
+
+```bash
+~/.claude/skills/herdr-architect/teardown.sh    # refuses while an agent is working or blocked
+```
+
+Then report once. The user reads nothing else, so it stands alone; it comes from the Sol reports, your verification run, and the advisor's answer, never from scrollback. Bold labels, each a line or a short list:
+
+```
+Outcome:  done | stopped, and why in one sentence
+Changed:  file or file group: what it does now, one per line; Sol's judgment calls; corrective rounds and what was wrong
+Verified: the command you re-ran and the lines of output that prove it, in a code block
+Review:   advisor verdict; each flagged item and how it was resolved
+Open:     gaps from the Sol reports, anything unverified, decisions for the user, or none
+Where:    $REPORT_DIR
+```

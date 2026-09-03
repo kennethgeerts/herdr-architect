@@ -12,7 +12,7 @@ A Claude Code skill that turns one session into an architect over two [Herdr](ht
 | Implementer | GPT-5.6 Sol via Codex CLI | its own tab, sandboxed to the working tree and /tmp |
 | Advisor | Fable 5.1 via Claude Code in plan mode | its own tab, read-only, cleared after every consult |
 
-Both tabs stay visible in Herdr, so you can watch Sol work or read the advisor's reasoning at any time.
+Both tabs stay visible in Herdr while the work runs, so you can watch Sol work or read the advisor's reasoning at any time.
 
 ## Flow
 
@@ -21,6 +21,7 @@ Both tabs stay visible in Herdr, so you can watch Sol work or read the advisor's
 3. Sol writes a report file in a fixed format. The architect reads the diff and re-runs the verification itself.
 4. The advisor is consulted before architectural commitments, after two failed attempts, and once at the end of every deliverable. It answers in under 300 words and ends with `VERDICT: ship | fix-first | rethink`.
 5. `fix-first` goes back to Sol as a numbered list. The architect verifies the fix against that list.
+6. `teardown.sh` closes both tabs and the architect reports: outcome, changes, verification, review verdict, open items.
 
 ## Requirements
 
@@ -51,6 +52,7 @@ Sol's reasoning effort is chosen at setup and holds for the tab: `high` by defau
 | `sol-rules.md` | standing rules and report format, appended to every spec |
 | `advisor-prompt.md` | system prompt for the advisor's Claude Code session |
 | `setup.sh` | preflight, report directory, tab creation or reuse, trust dialog, env file |
+| `teardown.sh` | closes both tabs and removes the env file; reports stay under `/tmp` |
 
 ## Credits
 

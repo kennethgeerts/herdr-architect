@@ -9,16 +9,16 @@ A Claude Code skill that turns one session into an architect over two [Herdr](ht
 | Role | Model | Where |
 |---|---|---|
 | Architect | the session you talk to, any model | your pane: specs, verification, reporting |
-| Implementer | GPT-5.6 Sol via Codex CLI | its own tab, sandboxed to the working tree, /tmp and the reports directory |
+| Implementer | GPT-5.6 Sol via Codex CLI | its own tab, sandboxed to the working tree, `/tmp` and the reports directory |
 | Advisor | Fable 5.1 via Claude Code in plan mode | its own tab, read-only, cleared after every consult |
 
 Both tabs stay visible in Herdr while the work runs, so you can watch Sol work or read the advisor's reasoning at any time.
 
 ## Flow
 
-1. `setup.sh` runs preflight and opens or reuses both tabs.
+1. `setup.sh` runs preflight, snapshots the working tree, and opens or reuses both tabs, accepting the Codex and Claude folder-trust dialogs.
 2. The architect writes a spec with six fixed parts and sends it to Sol. The call returns as soon as Sol starts working; the architect writes the next spec or the review consult while it does.
-3. Sol writes a report file in a fixed format. The architect reads the diff and re-runs the verification itself.
+3. Sol writes a report file in a fixed format. The architect reads the diff against the setup snapshot, so edits made before setup stay out, and re-runs the verification itself.
 4. The advisor is consulted before architectural commitments, after two failed attempts, and once at the end of every deliverable. It answers in under 300 words and ends with `VERDICT: ship | fix-first | rethink`.
 5. `fix-first` goes back to Sol as a numbered list. The architect verifies the fix against that list.
 6. `teardown.sh` closes both tabs and the architect reports: outcome, changes, verification, review verdict, open items.
@@ -29,8 +29,9 @@ Both tabs stay visible in Herdr while the work runs, so you can watch Sol work o
 - `codex` with access to `gpt-5.6-sol`
 - `claude` with access to the `fable` model
 - `python3`
+- a git working tree, for the review diff
 
-Tested with Herdr 0.8.2, Codex CLI 0.152.1 and Claude Code 2.1.258.
+Tested with Herdr 0.9.1, Codex CLI 0.163.0 and Claude Code 2.1.301.
 
 ## Install
 
@@ -42,7 +43,9 @@ git clone https://github.com/kennethgeerts/herdr-architect ~/.claude/skills/herd
 
 In a Claude Code session inside Herdr, ask for work "with Sol", "via Codex", or "with the architect pattern", or ask for a Fable review. The session loads the skill and takes it from there.
 
-Sol's reasoning effort is chosen at setup and holds for the tab: `high` by default, or `xhigh`, `max`, `ultra` for harder work. Reports, specs and consults land under `~/.local/state/herdr-architect/<timestamp>-<slug>/`. Review diffs exclude edits made before setup.
+Sol's reasoning effort is chosen at setup and holds for the tab: `high` by default, or `xhigh`, `max`, `ultra` for harder work.
+
+Specs, reports and consults land under `~/.local/state/herdr-architect/<timestamp>-<slug>/` (or `$XDG_STATE_HOME/herdr-architect/`) and survive teardown and reboots.
 
 ## Files
 

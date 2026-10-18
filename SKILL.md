@@ -27,9 +27,9 @@ Every Herdr command this pattern needs is below. Open `herdr --skill` only when 
 ~/.claude/skills/herdr-architect/setup.sh <slug> [high|xhigh|max|ultra]
 ```
 
-Preflight (`HERDR_ENV=1`, `herdr`, `codex`, `claude`, `python3`), report dir, both tabs. A live `sol*` or `advisor*` agent in `$HERDR_WORKSPACE_ID` is reused (`/new` and `/clear` sent); otherwise the tabs are created in `$PWD` without taking focus, and Claude's folder-trust dialog is accepted. It writes `/tmp/herdr-architect/$HERDR_WORKSPACE_ID.env` holding `SOL`, `ADVISOR`, `REPORT_DIR`, `SKILL_DIR`; every command below starts by sourcing it. A non-zero exit says what failed. A missing prerequisite means stop and say so; never implement the work yourself. A blocked agent screen goes to the user; rerun once resolved.
+Preflight (`HERDR_ENV=1`, `herdr`, `codex`, `claude`, `python3`), report dir, both tabs. A live `sol*` or `advisor*` agent in `$HERDR_WORKSPACE_ID` is reused (`/new` and `/clear` sent); otherwise the tabs are created in `$PWD` without taking focus, and the Codex and Claude folder-trust dialogs are accepted. It writes `/tmp/herdr-architect/$HERDR_WORKSPACE_ID.env` holding `SOL`, `ADVISOR`, `REPORT_DIR` (under `~/.local/state/herdr-architect/`), `SKILL_DIR`, and `BASE` (tree snapshot at setup, untracked files included); every command below starts by sourcing it. A non-zero exit says what failed. A missing prerequisite means stop and say so; never implement the work yourself. A blocked agent screen goes to the user; rerun once resolved.
 
-The tabs live for one deliverable: setup reuses a live pair, `teardown.sh` at the end closes them. Skip teardown only when the user has said more Sol work is coming this session. Sol's effort holds for the life of the tab (to change it, run teardown and rerun setup): `high` by default, `xhigh` for tricky multi-file logic, `max` for concurrency, security, or hard debugging, `ultra` only for wide refactors. Sol runs with `-a on-request -s workspace-write`, full-auto inside the working tree and /tmp; never bypass the sandbox. The advisor runs `claude --model fable --permission-mode plan` with `advisor-prompt.md` appended to its system prompt.
+The tabs live for one deliverable: setup reuses a live pair, `teardown.sh` at the end closes them. Skip teardown only when the user has said more Sol work is coming this session. Sol's effort holds for the life of the tab (to change it, run teardown and rerun setup): `high` by default, `xhigh` for tricky multi-file logic, `max` for concurrency, security, or hard debugging, `ultra` only for wide refactors. Sol runs with `-a on-request -s workspace-write --add-dir <reports root>`, full-auto inside the working tree, /tmp and the reports root; never bypass the sandbox. The advisor runs `claude --model fable --permission-mode plan` with `advisor-prompt.md` appended to its system prompt.
 
 ## Delegating to Sol
 
@@ -41,7 +41,7 @@ Sol shares none of your conversation. A spec has six parts: **objective** (one p
 herdr agent prompt "$SOL" "$(cat "$REPORT_DIR/spec-<task-id>.md" "$SKILL_DIR/sol-rules.md")" --wait --until working --timeout 10000
 # returns within a second once Sol is working; now write the next spec or consult
 herdr agent wait "$SOL" --timeout 1800000
-cat "$REPORT_DIR/<task-id>.md"; git add -N . && git diff --stat
+cat "$REPORT_DIR/<task-id>.md"; git add -N . && git diff --stat $BASE
 # then re-run the verification command yourself
 ```
 
@@ -55,7 +55,7 @@ Consult before committing to an architecture, migration, API shape, or refactor 
 
 ```bash
 . /tmp/herdr-architect/$HERDR_WORKSPACE_ID.env
-git add -N . && git diff > "$REPORT_DIR/review.diff"   # final review only; diff against the base commit if Sol committed
+git add -N . && git diff $BASE > "$REPORT_DIR/review.diff"   # final review only; edits that predate setup stay out
 herdr agent prompt "$ADVISOR" "$(cat "$REPORT_DIR/consult.md")" --wait --timeout 600000
 herdr agent read "$ADVISOR" --source recent-unwrapped --lines 200
 herdr agent prompt "$ADVISOR" "/clear"    # after reading: the tab is clean for the next consult

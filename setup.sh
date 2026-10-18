@@ -2,7 +2,7 @@
 # herdr-architect setup: preflight, report dir, sol + advisor tabs.
 # usage: setup.sh <slug> [high|xhigh|max|ultra]
 # Reuses live agents in this workspace (sends sol /new, advisor /clear); otherwise creates them.
-# Writes /tmp/herdr-architect/<workspace>.env with SOL, ADVISOR, REPORT_DIR, SKILL_DIR and prints it.
+# Writes /tmp/herdr-architect/<workspace>.env with SOL, ADVISOR, REPORT_DIR, SKILL_DIR, BASE and prints it.
 set -euo pipefail
 slug=${1:?usage: setup.sh <slug> [high|xhigh|max|ultra]}
 effort=${2:-high}
@@ -14,8 +14,10 @@ for c in herdr codex claude python3; do
   command -v "$c" >/dev/null || { echo "preflight: missing $c" >&2; exit 1; }
 done
 ws=$HERDR_WORKSPACE_ID
-report_dir=/tmp/herdr-architect/$(date +%Y%m%d-%H%M%S)-$slug
-mkdir -p "$report_dir"
+# reports outlive /tmp; Sol gets --add-dir on the root so a reused tab can write each new report dir
+reports_root=${XDG_STATE_HOME:-$HOME/.local/state}/herdr-architect
+report_dir=$reports_root/$(date +%Y%m%d-%H%M%S)-$slug
+mkdir -p "$report_dir" /tmp/herdr-architect
 agents=$(herdr agent list)
 
 # live agent of <kind> in this workspace whose name starts with <prefix>: prints "name status"
@@ -35,7 +37,7 @@ sys.exit(0 if any(a.get("name") == sys.argv[1] for a in json.load(sys.stdin)["re
 }
 pick_name() { if name_taken "$1"; then echo "$1-$slug"; else echo "$1"; fi; }
 
-# start_agent <name> <kind> <agent args...>: new tab in $PWD, start, accept Claude's trust dialog if shown
+# start_agent <name> <kind> <agent args...>: new tab in $PWD, start, accept a folder-trust dialog if shown
 start_agent() {
   local name=$1 kind=$2; shift 2
   local r pane out
@@ -44,13 +46,16 @@ start_agent() {
   if out=$(herdr agent start "$name" --kind "$kind" --pane "$pane" -- "$@" 2>&1); then
     echo "$name: created in pane $pane"; return
   fi
-  if printf '%s' "$out" | grep -q agent_not_ready \
-     && herdr agent read "$name" --source visible --lines 40 | grep -q 'Yes, I trust this folder'; then
-    herdr agent send-keys "$name" down >/dev/null
-    herdr agent send-keys "$name" enter >/dev/null
-    herdr agent wait "$name" --until idle --until done --timeout 60000 >/dev/null
-    echo "$name: created in pane $pane (trust dialog accepted)"; return
-  fi
+  local screen=
+  [[ $out == *agent_not_ready* ]] && screen=$(herdr agent read "$name" --source visible --lines 40)
+  # Claude preselects "No, exit"; Codex preselects "Trust and continue" (its -c projects trust override is ignored)
+  case $screen in
+    *'Yes, I trust this folder'*) herdr agent send-keys "$name" down >/dev/null ;&
+    *'Trust and continue'*)
+      herdr agent send-keys "$name" enter >/dev/null
+      herdr agent wait "$name" --until idle --until done --timeout 60000 >/dev/null
+      echo "$name: created in pane $pane (trust dialog accepted)"; return ;;
+  esac
   echo "$name: start failed in pane $pane; screen follows. Handle it, then rerun setup.sh (it will reuse)." >&2
   printf '%s\n' "$out" >&2
   herdr agent read "$name" --source visible --lines 25 >&2 || true
@@ -73,7 +78,8 @@ reuse_or_start() {
   fi
 }
 
-reuse_or_start sol codex /new -m gpt-5.6-sol -c "model_reasoning_effort=$effort" -a on-request -s workspace-write
+reuse_or_start sol codex /new -m gpt-5.6-sol -c "model_reasoning_effort=$effort" -a on-request -s workspace-write \
+  --add-dir "$reports_root"
 sol=$name
 if [ "$reused" = 1 ] && [ -n "${2:-}" ]; then
   echo "note: $sol was reused and keeps the effort it was launched with; close its tab (herdr tab close) and rerun to get $effort" >&2
@@ -82,6 +88,15 @@ reuse_or_start advisor claude /clear --model fable --permission-mode plan \
   --append-system-prompt-file "$skill_dir/advisor-prompt.md"
 advisor=$name
 
+# BASE: tree snapshot of the working tree, untracked files included, so review diffs show only this deliverable
+base=
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  idx=$(mktemp -u); index=$(git rev-parse --git-path index)
+  if [ -f "$index" ]; then cp "$index" "$idx"; fi    # start from the real index so only changed files are hashed
+  base=$(export GIT_INDEX_FILE=$idx; git add -A && git write-tree)
+  rm -f "$idx"
+fi
+
 env_file=/tmp/herdr-architect/$ws.env
-printf 'SOL=%s\nADVISOR=%s\nREPORT_DIR=%s\nSKILL_DIR=%s\n' "$sol" "$advisor" "$report_dir" "$skill_dir" > "$env_file"
+printf 'SOL=%s\nADVISOR=%s\nREPORT_DIR=%s\nSKILL_DIR=%s\nBASE=%s\n' "$sol" "$advisor" "$report_dir" "$skill_dir" "$base" > "$env_file"
 echo "env: $env_file"; cat "$env_file"

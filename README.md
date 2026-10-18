@@ -9,7 +9,7 @@ A Claude Code skill that turns one session into an architect over two [Herdr](ht
 | Role | Model | Where |
 |---|---|---|
 | Architect | the session you talk to, any model | your pane: specs, verification, reporting |
-| Implementer | GPT-5.6 Sol via Codex CLI | its own tab, sandboxed to the working tree and /tmp |
+| Implementer | GPT-5.6 Sol via Codex CLI | its own tab, sandboxed to the working tree, /tmp and the reports directory |
 | Advisor | Fable 5.1 via Claude Code in plan mode | its own tab, read-only, cleared after every consult |
 
 Both tabs stay visible in Herdr while the work runs, so you can watch Sol work or read the advisor's reasoning at any time.
@@ -42,7 +42,7 @@ git clone https://github.com/kennethgeerts/herdr-architect ~/.claude/skills/herd
 
 In a Claude Code session inside Herdr, ask for work "with Sol", "via Codex", or "with the architect pattern", or ask for a Fable review. The session loads the skill and takes it from there.
 
-Sol's reasoning effort is chosen at setup and holds for the tab: `high` by default, or `xhigh`, `max`, `ultra` for harder work. Reports, specs and consults land under `/tmp/herdr-architect/<timestamp>-<slug>/`.
+Sol's reasoning effort is chosen at setup and holds for the tab: `high` by default, or `xhigh`, `max`, `ultra` for harder work. Reports, specs and consults land under `~/.local/state/herdr-architect/<timestamp>-<slug>/`. Review diffs exclude edits made before setup.
 
 ## Files
 
@@ -51,8 +51,8 @@ Sol's reasoning effort is chosen at setup and holds for the tab: `high` by defau
 | `SKILL.md` | the pattern: rules, spec format, command blocks |
 | `sol-rules.md` | standing rules and report format, appended to every spec |
 | `advisor-prompt.md` | system prompt for the advisor's Claude Code session |
-| `setup.sh` | preflight, report directory, tab creation or reuse, trust dialog, env file |
-| `teardown.sh` | closes both tabs and removes the env file; reports stay under `/tmp` |
+| `setup.sh` | preflight, report directory, base snapshot, tab creation or reuse, trust dialogs, env file |
+| `teardown.sh` | closes both tabs and removes the env file; reports are kept |
 
 ## Credits
 
